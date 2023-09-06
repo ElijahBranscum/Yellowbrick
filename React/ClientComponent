@@ -1,0 +1,68 @@
+import React from "react";
+import PropTypes from "prop-types";
+import { useNavigate } from "react-router-dom";
+
+function ClientComponent(props) {
+  const client = props.client;
+  const navigate = useNavigate();
+
+  const onClientClick = () => {
+    navigate(`/clients/${client.id}`);
+  };
+  return (
+    <tr role="row" onClick={onClientClick}>
+      <td role="cell">{client.id}</td>
+      <td role="cell">
+        {client.mi
+          ? `${client.firstName} ${client.mi} ${client.lastName}`
+          : `${client.firstName} ${client.lastName}`}
+      </td>
+      <td role="cell">{client.email}</td>
+      <td role="cell">{client.phone}</td>
+      <td role="cell">
+        <div className="row justify-content-center me-3">
+          <div className="col-1">
+            <div className="image-container">
+              <img
+                src={
+                  client.createdBy.avatarUrl
+                    ? client.createdBy.avatarUrl
+                    : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRY5GfGomQwUzWsCqesYfd0TNe6MAg0cnsfiQ&usqp=CAU"
+                }
+                className="avatarUrl me-2"
+                alt="..."
+                onError={props.useDefaultAvatar}
+              />
+            </div>
+          </div>
+
+          <div className="col-1 pt-3">
+            {client.createdBy.mi
+              ? `${client.createdBy.firstName} ${client.createdBy.mi} ${client.createdBy.lastName}`
+              : `${client.createdBy.firstName} ${client.createdBy.lastName}`}
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+ClientComponent.propTypes = {
+  client: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    firstName: PropTypes.string.isRequired,
+    lastName: PropTypes.string.isRequired,
+    mi: PropTypes.string,
+    email: PropTypes.string.isRequired,
+    phone: PropTypes.string.isRequired,
+    createdBy: PropTypes.shape({
+      firstName: PropTypes.string.isRequired,
+      lastName: PropTypes.string.isRequired,
+      mi: PropTypes.string,
+      avatarUrl: PropTypes.string,
+    }),
+  }).isRequired,
+  useDefaultAvatar: PropTypes.func,
+};
+
+export default ClientComponent;
