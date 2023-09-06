@@ -1,0 +1,98 @@
+import axios from "axios";
+import {
+  onGlobalError,
+  onGlobalSuccess,
+  API_HOST_PREFIX,
+} from "./serviceHelpers";
+
+const endpoint = { clientUrl: `${API_HOST_PREFIX}/api/clients` };
+
+const add = (payload) => {
+  const config = {
+    method: "POST",
+    url: `${endpoint.clientUrl}` + "/personals",
+    data: payload,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+const updateClient = (id, payload) => {
+  const config = {
+    method: "PUT",
+    url: `${endpoint.clientUrl}/personals/${id}`,
+    data: payload,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+
+const selectAll = (idx, size) => {
+  const config = {
+    method: "GET",
+    url: `${endpoint.clientUrl}/paginate/?pageIndex=${idx}&pageSize=${size}`,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+
+const searchByClient = (idx, size, query) => {
+  const config = {
+    method: "GET",
+    url: `${endpoint.clientUrl}/search/?pageIndex=${idx}&pageSize=${size}&query=${query}`,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+
+const getByAgentName = (idx, size, agent) => {
+  const config = {
+    method: "GET",
+    url: `${endpoint.clientUrl}/byAgent/?pageIndex=${idx}&pageSize=${size}&agent=${agent}`,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+
+const getPersonalInformation = (id) => {
+  const config = {
+    method: "GET",
+    url: `${endpoint.clientUrl}` + "/personals/" + id,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+
+const getById = (idx, size, id) => {
+  const config = {
+    method: "GET",
+    url: `${endpoint.clientUrl}/paginate/${id}/?pageIndex=${idx}&pageSize=${size}`,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+
+const clientService = {
+  add,
+  getByAgentName,
+  searchByClient,
+  selectAll,
+  getPersonalInformation,
+  updateClient,
+  getById,
+};
+
+export default clientService;
