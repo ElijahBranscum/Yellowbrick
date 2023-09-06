@@ -1,0 +1,39 @@
+USE [YellowBrick]
+GO
+/****** Object:  StoredProcedure [dbo].[FileTypes_SelectAll]    Script Date: 9/6/2023 4:01:30 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author: Elijah Branscum
+-- Create date: 7/1/2023
+-- Description: This is a proc to select all data from the FileTypes table.
+-- Code Reviewer: Nicolas Rodriguez
+
+-- MODIFIED BY: author
+-- MODIFIED DATE:12/1/2020
+-- Code Reviewer:
+-- Note:
+-- =============================================
+
+ALTER PROC [dbo].[FileTypes_SelectAll]
+
+AS
+
+/*------Test Code------
+
+	EXEC dbo.FileTypes_SelectAll;
+
+*/
+
+BEGIN
+
+	SELECT 
+			[Id],
+			[Name]
+	  FROM 
+			[dbo].[FileTypes];
+
+END
