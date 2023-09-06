@@ -1,0 +1,118 @@
+USE [YellowBrick]
+GO
+/****** Object:  StoredProcedure [dbo].[Clients_Select_ByCreatedBy_Name]    Script Date: 9/6/2023 4:08:48 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- Author: <Elijah Branscum>
+-- Create date: <07/19/2023>
+-- Description: <Select all Columns of Client joined with Location joined with User by CreatedBy_Name>
+-- Code Reviewer: Wendy Ruiz
+
+-- MODIFIED BY: 
+-- MODIFIED DATE:
+-- Code Reviewer:
+-- Note:
+
+ALTER PROC [dbo].[Clients_Select_ByCreatedBy_Name]
+	 @Agent NVARCHAR(204),
+	 @PageIndex INT, 
+	 @PageSize INT
+as
+/*
+	DECLARE  @Agent NVARCHAR(204) = 'John S Johnson'
+			,@PageIndex int = 0
+			,@PageSize int = 20
+	EXECUTE [dbo].[Clients_Select_ByCreatedBy_Name]
+			 @Agent
+			,@PageIndex
+			,@PageSize
+*/
+BEGIN
+	DECLARE @offset INT = @PageIndex * @PageSize,
+			@FirstName NVARCHAR(100),
+			@LastName NVARCHAR(100),
+			@MiddleInitial NVARCHAR(2)
+			
+			SET @FirstName = CASE WHEN CHARINDEX(' ', @Agent) > 0
+								  THEN SUBSTRING(@Agent, 1, CHARINDEX(' ', @Agent)-1)
+							 END
+
+			SET @LastName = CASE WHEN CHARINDEX(' ', @Agent) > 0
+								 THEN SUBSTRING(@Agent, CHARINDEX(' ', @Agent)+1, LEN(@Agent)-CHARINDEX(' ', @Agent))
+							END
+
+			SET @MiddleInitial = CASE WHEN CHARINDEX(' ', @LastName) > 0
+									  THEN SUBSTRING(@LastName, 1, CHARINDEX(' ', @Agent)-1)
+								 END
+			IF @MiddleInitial IS NOT NULL 
+				BEGIN
+					SET @LastName = CASE WHEN CHARINDEX(' ', @LastName) > 0
+										 THEN SUBSTRING(@LastName, CHARINDEX(' ', @LastName)+1, LEN(@LastName)-CHARINDEX(' ', @LastName))
+									END
+				END
+
+
+	SELECT co.Id
+		  ,co.[FirstName]
+		  ,co.[LastName]
+		  ,co.[Mi]
+		  ,[DOB]
+		  ,[Phone]
+		  ,co.[Email]
+		  ,l.[Id]
+		  ,l.[LocationTypeId]
+		  ,t.[Name]
+		  ,l.[LineOne]
+		  ,l.[LineTwo]
+		  ,l.[City]
+		  ,l.[Zip]
+		  ,l.[StateId]
+		  ,st.[Name]
+		  ,st.[Code]
+		  ,l.[Latitude]
+		  ,l.[Longitude]
+		  ,[HasFamily]
+		  ,Status=(
+					Select s.id, s.Name from dbo.StatusTypes as s
+					inner join dbo.Clients as c
+					on c.StatusId=s.Id
+					where c.id = co.id
+					for JSON AUTO, without_array_wrapper
+				   )
+		  ,u.id
+		  ,u.FirstName
+		  ,u.LastName
+		  ,u.Mi
+		  ,u.AvatarUrl
+		  ,co.[ModifiedBy]
+		  ,co.[DateCreated]
+		  ,co.[DateModified]
+		  ,TotalCount = COUNT(1) OVER() 
+
+		FROM dbo.Clients as co
+		inner join dbo.Locations as L
+		on co.LocationId=l.Id
+		inner join dbo.States as st on st.Id = l.Id 
+		inner join dbo.LocationTypes as t on l.LocationTypeId = t.Id
+		inner join dbo.Users as u
+		on u.Id=co.CreatedBy
+		Where co.CreatedBy= (
+								SELECT u.Id
+								FROM dbo.Users as u
+								WHERE u.FirstName = @FirstName 
+								AND   (u.Mi = @MiddleInitial OR u.MI IS NULL)
+								AND	  u.LastName = @LastName 
+							)
+		and co.StatusId=1
+
+		ORDER BY co.Id
+		OFFSET @offSet ROWS
+		FETCH NEXT @PageSize ROWS ONLY
+	
+
+END
+
+
