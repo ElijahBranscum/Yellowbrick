@@ -1,0 +1,19 @@
+using Microsoft.AspNetCore.Http;
+using Yellowbrick.Models;
+using Yellowbrick.Models.Domain.Files;
+using Yellowbrick.Models.Requests.Files;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace Yellowbrick.Services.Interfaces
+{
+    public interface IFileService
+    {
+        int Add(FileAddRequest model, int userId);
+        Paged<FileModel> SelectAll(int pageIndex, int pageSize);
+        Paged<FileModel> SelectActive(int pageIndex, int pageSize);
+        Paged<FileModel> SelectByCreatedBy(int createdBy, int pageIndex, int pageSize);
+        void UpdateIsDeleted(int id);
+        Task<List<FileData>> UploadFileAsync(List<IFormFile> files, int userId);
+    }
+}
