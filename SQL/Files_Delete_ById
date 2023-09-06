@@ -1,0 +1,42 @@
+USE [YellowBrick]
+GO
+/****** Object:  StoredProcedure [dbo].[Files_Delete_ById]    Script Date: 9/6/2023 3:55:02 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author: Elijah Branscum
+-- Create date: 7/1/2023
+-- Description: This is a proc that updates the IsDeleted value to 1 (true) at a given Id.
+-- Code Reviewer: Nicolas Rodriguez
+
+-- MODIFIED BY: author
+-- MODIFIED DATE:12/1/2020
+-- Code Reviewer:
+-- Note:
+-- =============================================
+
+ALTER PROC [dbo].[Files_Delete_ById]
+		@Id INT
+
+AS
+
+/*------Test Code-------
+
+	DECLARE @_id INT = 7;
+	EXEC dbo.Files_Delete_ById @_id;
+
+*/
+
+BEGIN
+
+	UPDATE 
+			[dbo].[Files]
+	   SET 
+			[IsDeleted] = 1
+	 WHERE 
+			Id = @Id;
+
+END
