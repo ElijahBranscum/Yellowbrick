@@ -1,0 +1,188 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Yellowbrick.Models;
+using Yellowbrick.Models.Domain.Files;
+using Yellowbrick.Models.Requests.Files;
+using Yellowbrick.Services;
+using Yellowbrick.Services.Interfaces;
+using Yellowbrick.Web.Controllers;
+using Yellowbrick.Web.Models.Responses;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
+
+namespace Yellowbrick.Web.Api.Controllers
+{
+    [Route("api/files")]
+    [ApiController]
+    public class FileApiController : BaseApiController
+    {
+        private IFileService _service = null;
+        private IAuthenticationService<int> _authService = null;
+
+        public FileApiController(IFileService service,
+            ILogger<FileApiController> logger,
+            IAuthenticationService<int> authService) : base(logger)
+        {
+            _service = service;
+            _authService = authService;
+        }
+
+        [HttpGet("active")]
+        public ActionResult<ItemResponse<Paged<FileModel>>> GetActive(int pageIndex, int pageSize)
+        {
+            int code = 200;
+            BaseResponse response = null;
+
+            try
+            {
+                Paged<FileModel> page = _service.SelectActive(pageIndex, pageSize);
+
+                if (page == null)
+                {
+                    code = 404;
+                    response = new ErrorResponse("App Resource not found.");
+                }
+                else
+                {
+                    response = new ItemResponse<Paged<FileModel>> { Item = page };
+                }
+            }
+            catch (Exception ex)
+            {
+                code = 500;
+                response = new ErrorResponse(ex.Message);
+                base.Logger.LogError(ex.ToString());
+            }
+            return StatusCode(code, response);
+        }
+
+        [HttpGet]
+        public ActionResult<ItemResponse<Paged<FileModel>>> GetAll(int pageIndex, int pageSize)
+        {
+            int code = 200;
+            BaseResponse response = null;
+
+            try
+            {
+                Paged<FileModel> page = _service.SelectAll(pageIndex, pageSize);
+
+                if (page == null)
+                {
+                    code = 404;
+                    response = new ErrorResponse("App Resource not found.");
+                }
+                else
+                {
+                    response = new ItemResponse<Paged<FileModel>> { Item = page };
+                }
+            }
+            catch (Exception ex)
+            {
+                code = 500;
+                response = new ErrorResponse(ex.Message);
+                base.Logger.LogError(ex.ToString());
+            }
+            return StatusCode(code, response);
+        }
+
+        [HttpGet("createdby")]
+        public ActionResult<ItemResponse<Paged<FileModel>>> GetByCreatedBy(int pageIndex, int pageSize, int userId)
+        {
+            int code = 200;
+            BaseResponse response = null;
+
+            try
+            {
+                Paged<FileModel> page = _service.SelectByCreatedBy(pageIndex, pageSize, userId);
+
+                if (page == null)
+                {
+                    code = 404;
+                    response = new ErrorResponse("App Resource not found.");
+                }
+                else
+                {
+                    response = new ItemResponse<Paged<FileModel>> { Item = page };
+                }
+            }
+            catch (Exception ex)
+            {
+                code = 500;
+                response = new ErrorResponse(ex.Message);
+                base.Logger.LogError(ex.ToString());
+            }
+            return StatusCode(code, response);
+        }
+
+        [HttpPost]
+        public ActionResult<ItemResponse<int>> Create(FileAddRequest model)
+        {
+            ObjectResult result = null;
+
+            try
+            {
+                int userId = _authService.GetCurrentUserId();
+                int id = _service.Add(model, userId);
+                ItemResponse<int> response = new ItemResponse<int>() { Item = id };
+
+                result = Created201(response);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.ToString());
+                ErrorResponse response = new ErrorResponse(ex.Message);
+
+                result = StatusCode(500, response);
+            }
+
+            return result;
+        }
+
+        [HttpDelete("{id:int}")]
+        public ActionResult<SuccessResponse> Delete(int id)
+        {
+            int code = 200;
+            BaseResponse response = null;
+
+            try
+            {
+                _service.UpdateIsDeleted(id);
+                response = new SuccessResponse();
+            }
+            catch (Exception ex)
+            {
+                code = 500;
+                response = new ErrorResponse(ex.Message);
+            }
+            return StatusCode(code, response);
+        }
+
+        [HttpPost("upload")]
+        public async Task<ActionResult<ItemsResponse<SuccessResponse>>> FileUpload(List<IFormFile> files)
+        {
+            ObjectResult result = null;
+            try
+            {
+                if(files == null || files.Count == 0)
+                {
+                    throw new Exception("No File Selected");
+                }
+
+                int userId = _authService.GetCurrentUserId();
+                List<FileData> filesDataList = await _service.UploadFileAsync(files, userId);
+                ItemResponse<List<FileData>> response = new ItemResponse<List<FileData>>() { Item = filesDataList };
+                result = Created201(response);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.ToString());
+                ErrorResponse response = new ErrorResponse(ex.Message);
+                result = StatusCode(500, response);
+            }
+            return result;
+        }
+    }
+}
