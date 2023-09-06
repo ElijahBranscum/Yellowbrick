@@ -1,0 +1,26 @@
+using Yellowbrick.Models;
+using Yellowbrick.Models.Domain;
+using Yellowbrick.Models.Requests.ClientRequests;
+using System.Data;
+
+namespace Yellowbrick.Services.ClientServices
+{
+    public interface IClientService
+    {
+        int Add(ClientAddRequest request,int userId);
+        int AddPersonalInformation(ClientAddRequest request, int userId);
+        ClientPersonal GetPersonalInformation(int id);
+        void UpdatePersonalInformation(ClientPersonalUpdateRequest request, int userId);
+        void Delete(int id,int userId);
+        Paged<Client> GetAll(int pageIndex, int pageSize);
+        Paged<Client> Get(int pageIndex, int pageSize, int CreatedId);
+        HouseHold Get(int id);
+        Paged<Client> Search(int pageIndex, int pageSize, string query);
+        void Update(ClientUpdateRequest request, int userId);
+        int AddHousehold(HouseholdAddRequest request, int userId);
+        void UpdateHousehold(HouseholdUpdateRequest request, int userId);
+        void DeleteHousehold(int id, int userId);
+        ClientBase MapClientBase(IDataReader reader, ref int startingIndex);
+        Paged<Client> GetByAgentName(int pageIndex, int pageSize, string agent);
+    }
+}
