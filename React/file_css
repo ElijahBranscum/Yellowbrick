@@ -1,1 +1,17 @@
+.dropzone {
+  border: 2px dashed #a4a4a4;
+  padding: 20px;
+  text-align: center;
+} 
 
+.drag-active {
+  background-color: #dfdfdf;
+  padding-inline: 118px;
+  padding-top: 28px;
+}
+
+.horizontal {
+  list-style: none; 
+  display: flex; 
+  padding: 0;
+}
