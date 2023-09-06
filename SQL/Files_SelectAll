@@ -1,0 +1,64 @@
+USE [YellowBrick]
+GO
+/****** Object:  StoredProcedure [dbo].[Files_SelectAll]    Script Date: 9/6/2023 3:59:29 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author: Elijah Branscum
+-- Create date: 7/1/2023
+-- Description: This is a proc to return a paginated list of all data from the Files table where IsDeleted is 0 (false).
+-- Code Reviewer: Nicolas Rodriguez
+
+-- MODIFIED BY: author
+-- MODIFIED DATE:12/1/2020
+-- Code Reviewer:
+-- Note:
+-- =============================================
+
+ALTER PROC [dbo].[Files_SelectAll]
+		@PageIndex INT,
+		@PageSize INT
+
+AS
+
+/*------Test Code------
+
+	DECLARE 
+			@_pageIndex INT = 0,
+			@_pageSize INT = 10;
+
+	EXEC dbo.Files_SelectAll
+			@_pageIndex,
+			@_pageSize;
+
+*/
+
+BEGIN
+
+	DECLARE 
+			@offset INT = @PageIndex * @PageSize
+
+	SELECT 
+			f.[Id],
+			f.[Name],
+			[Url],
+			ft.Id AS FileTypeId,
+			ft.[Name] AS FileType,
+			[IsDeleted],
+			[CreatedBy],
+			[DateCreated],
+			TotalCount = COUNT(1) OVER()
+	  FROM 
+			[dbo].[Files] AS f inner join dbo.FileTypes AS ft
+				ON ft.Id = f.FileTypeId
+
+  ORDER BY  
+			f.Id
+
+	OFFSET @offset ROWS
+	FETCH NEXT @PageSize ROWS ONLY;
+
+END
