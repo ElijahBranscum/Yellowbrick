@@ -1,0 +1,81 @@
+USE [YellowBrick]
+GO
+/****** Object:  StoredProcedure [dbo].[Files_Insert]    Script Date: 9/6/2023 3:56:00 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author: Elijah Branscum
+-- Create date: 7/1/2023
+-- Description: This is a proc that inserts a provided file.
+-- Code Reviewer: Nicolas Rodriguez
+
+-- MODIFIED BY: author
+-- MODIFIED DATE:12/1/2020
+-- Code Reviewer:
+-- Note:
+-- =============================================
+
+ALTER PROC [dbo].[Files_Insert]
+		@Name NVARCHAR(100),
+		@Url NVARCHAR(255),
+		@FileType NVARCHAR(50),
+		@CreatedBy INT,
+		@Id INT OUTPUT
+
+AS
+
+/*------Test Code-------
+
+	DECLARE @_name NVARCHAR(100) = 'Test File',
+			@_url NVARCHAR(255) = 'Test Url',
+			@_fileType NVARCHAR(50) = 'pdf',
+			@_createdBy INT = 1,
+			@_id INT = 0;
+
+	EXEC dbo.Files_Insert
+			@_name,
+			@_url,
+			@_fileType,
+			@_createdBy,
+			@_id OUTPUT;
+
+	SELECT * FROM dbo.Files WHERE Id = @_id;
+
+*/
+
+BEGIN
+
+	DECLARE @FileTypeId INT = (
+								SELECT 
+										Id
+								FROM	
+										dbo.FileTypes as f
+								WHERE f.Name LIKE @FileType	
+ 							  )
+
+	IF @FileTypeId IS NULL
+		BEGIN
+			RAISERROR('File type is not recognized', 16,1);
+			RETURN;
+		END
+
+	INSERT INTO 
+			[dbo].[Files] (
+						[Name],
+						[Url],
+						[FileTypeId],
+						[CreatedBy]
+			  ) VALUES (
+						@Name,
+						@Url,
+						@FileTypeId,
+						@CreatedBy
+			  );
+
+		SET @Id = SCOPE_IDENTITY();
+
+
+END
