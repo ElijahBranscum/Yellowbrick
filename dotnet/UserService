@@ -1,0 +1,131 @@
+using Yellowbrick.Data;
+using Yellowbrick.Data.Providers;
+using Yellowbrick.Models;
+using Yellowbrick.Models.Domain;
+using Yellowbrick.Models.Domain.Lookups;
+using Yellowbrick.Models.Requests.Users;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Yellowbrick.Services
+{
+    public class UserService
+    {
+        private IAuthenticationService<int> _authenticationService;
+        private IDataProvider _provider;
+
+        public UserServiceV2 (IAuthenticationService<int> authenticationService, IDataProvider provider)
+        {
+            _authenticationService = authenticationService;
+            _provider = provider;
+        }
+
+        public int Create(UserAddRequest request)
+        {
+            int id = 0;
+            string hashedPassword = BCrypt.BCryptHelper.HashPassword(request.Password, BCrypt.BCryptHelper.GenerateSalt());
+
+            _provider.ExecuteNonQuery("[dbo].[Users_Insert]", delegate (SqlParameterCollection param)
+            {
+                AddCommonParams(request, param);
+                param.AddWithValue("@Password", hashedPassword);
+
+                SqlParameter idOut = new SqlParameter("@Id", SqlDbType.Int);
+                idOut.Direction = ParameterDirection.Output;
+                param.Add(idOut);
+            }, delegate (SqlParameterCollection returnCollection)
+            {
+                object oId = returnCollection["@Id"].Value;
+                int.TryParse(oId.ToString(), out id);
+            });
+            return id;
+        }
+
+        public async Task<bool> Login(UserLoginRequest request)
+        {
+            bool isSuccessful = false;
+
+            IUserAuthData userData = GetUserAuthData(request);
+
+            if (userData != null)
+            {
+                Claim fullName = new Claim("UserAuthnticationClaim", "Yellowbrick");
+                await _authenticationService.LogInAsync(userData, new Claim[] { fullName });
+                isSuccessful = true;
+            }
+            return isSuccessful;
+        }
+
+        public IUserAuthData GetUserAuthData(UserLoginRequest request)
+        {
+           UserBase user = null;
+
+            _provider.ExecuteCmd("[dbo].[Users_Select_AuthData]", delegate (SqlParameterCollection param)
+            {
+                param.AddWithValue("@Email", request.Email);
+            }, delegate (IDataReader reader, short set)
+            {
+                int idx = 0;
+                UserAuth userAuth = MapSingleUserAuth(reader, ref idx);
+
+                if (userAuth != null)
+                {
+                    string encryptedPassword = userAuth.Password;
+                    string inputPassword = request.Password;
+                    bool isPasswordSame = BCrypt.BCryptHelper.CheckPassword(inputPassword, encryptedPassword);
+                    if (isPasswordSame) 
+                    { 
+                        user = new UserBase();
+
+                        List<string> userRoles = new List<string>();
+                        if (userAuth.Roles != null)
+                        {
+                           foreach(LookUp role in userAuth.Roles)
+                           {
+                               userRoles.Add(role.Name);
+                           }
+                        }
+
+                        user.Id = userAuth.Id;
+                        user.Name = $"{userAuth.FirstName} {(string.IsNullOrEmpty(userAuth?.Mi) ? "" : userAuth.Mi + " ")}{userAuth.LastName}";
+                        user.Email = userAuth.Email;
+                        user.Roles = userRoles;
+                        user.TenantId = "Yellowbrick Financial";
+                    }
+                }
+            });
+            return user;
+        }
+
+        private static void AddCommonParams (UserAddRequest request, SqlParameterCollection param)
+        {
+            param.AddWithValue("@Email", request.Email);
+            param.AddWithValue("@FirstName", request.FirstName);
+            param.AddWithValue("@LastName", request.LastName);
+            param.AddWithValue("@Mi", request.Mi);
+            param.AddWithValue("@AvatarUrl", request.AvatarUrl);
+            param.AddWithValue("UserToken", request.UserToken);
+        }
+
+        private static UserAuth MapSingleUserAuth(IDataReader reader, ref int idx)
+        {
+            UserAuth userAuth = new UserAuth();
+
+            userAuth.Id = reader.GetSafeInt32(idx++);
+            userAuth.Email = reader.GetSafeString(idx++);
+            userAuth.FirstName = reader.GetSafeString(idx++);
+            userAuth.LastName = reader.GetSafeString(idx++);
+            userAuth.Mi = reader.GetSafeString(idx++) ;
+            userAuth.Password = reader.GetSafeString(idx++);
+            userAuth.Roles = reader.DeserializeObject<List<LookUp>>(idx++);
+
+            return userAuth;
+        }
+    }
+}
